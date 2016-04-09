@@ -1,0 +1,18 @@
+{
+  "name": "placardoimpeachment",
+  "version": "0.0.1",
+  "description": "Placar do Impeachment do Estadão no Telegram ",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Lucas Vasconcelos",
+  "license": "MIT",
+  "dependencies": {
+    "botanio": "0.0.6",
+    "jsonfile": "^2.2.3",
+    "lodash": "^4.9.0",
+    "node-telegram-bot-api": "^0.21.1",
+    "request-promise": "^2.0.1"
+  }
+}
