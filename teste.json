@@ -23127,10 +23127,10 @@
         "$t": ""
       },
       "gsx$impeachment": {
-        "$t": "sim"
+        "$t": "indeciso"
       },
       "gsx$mudou": {
-        "$t": ""
+        "$t": "sim"
       },
       "gsx$foto": {
         "$t": "uldurico-junior-pv.jpg"
