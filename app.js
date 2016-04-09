@@ -20,14 +20,15 @@ let bot = new TelegramBot(token, {
 const jsonEndpoint = `https://spreadsheets.google.com/feeds/list/1fe3WOY4Zkx6M7aQ-LdklI_3Tlzbf1KkZSKQDqESAKrE/od6/public/values?alt=json`;
 let parsedContent = {};
 let deputadosList = [];
+let partidosList = [];
 let chats = [];
 let metrics = {};
-    metrics.aFavor = 0,
-    metrics.contra = 0,
-    metrics.indecisos = 0,
-    metrics.naoQuisResponder = 0;
+metrics.aFavor = 0,
+  metrics.contra = 0,
+  metrics.indecisos = 0,
+  metrics.naoQuisResponder = 0;
 
-update(500000);
+update();
 chatsManager();
 setInterval(update, 5000);
 
@@ -56,7 +57,6 @@ class Deputado {
 }
 
 avisos.on('mudou', function(data) {
-  console.log("MUDOU", data)
   let opt = {
     parse_mode: 'html'
   };
@@ -97,17 +97,85 @@ bot.onText(/\/placar/, function(msg, match) {
   botan.track(msg, 'placar');
 });
 
+bot.onText(/\/partidos/, function(msg, match) {
+  let text = 'Escolha o partido'
+  let opt = {
+    reply_to_message_id: msg.message_id,
+    reply_markup: JSON.stringify({
+      keyboard: partidosList,
+      one_time_keyboard: true,
+      selective: true,
+      hide_keyboard: true
+    })
+  }
+  bot.sendMessage(msg.chat.id, text, opt);
+  chatsManager(msg.chat.id);
+  botan.track(msg, 'lista');
+});
+
+bot.onText(/(.+)/, function(msg, match) {
+  let opt = {
+    parse_mode: 'html'
+  };
+  let deputados = _.filter(deputadosList, function(o) {
+    return o.partido === match[1];
+  });
+  if (deputados) {
+    let text = `
+      <b>Placar do Impeachment</b> <i>v0.0.1</i>
+    `;
+    for (let i in deputados) {
+      let emoji;
+      switch (deputados[i].impeachment) {
+        case 'sim':
+          emoji = '\u2705';
+          break;
+        case 'nao':
+          emoji = '\u274C';
+          break;
+        case 'indeciso':
+          emoji = '\u2753';
+          break;
+        case 'nao quis responder':
+          emoji = '\u2755';
+          break;
+      }
+      text += `${emoji} ${deputados[i].nome}<i>(${deputados[i].partido} - ${deputados[i].uf})</i>
+    `;
+    }
+    bot.sendMessage(msg.chat.id, text, opt);
+    chatsManager(msg.chat.id);
+    botan.track(msg, 'lista');
+  }
+});
+
 bot.onText(/\/lista/, function(msg, match) {
   let opt = {
     parse_mode: 'html'
   };
-  for (let j = 0; j < deputadosList.length; j += 70) {
+  let sendList = deputadosList;
+  while (sendList.length !== 0) {
     let text = `
-  <b>Placar do Impeachment</b> <i>v0.0.1</i>
-  `;
-    let newDeps = deputadosList.slice(j, j + 70);
-    for (let i in newDeps) {
-      text += `🔹 ${newDeps[i].nome}(${newDeps[i].partido} - ${newDeps[i].uf}) - ${newDeps[i].impeachment}
+      <b>Placar do Impeachment</b> <i>v0.0.1</i>
+    `;
+    let tempList = sendList.splice(0, 70);
+    for (let i in tempList) {
+      let emoji;
+      switch (tempList[i].impeachment) {
+        case 'sim':
+          emoji = '\u2705';
+          break;
+        case 'nao':
+          emoji = '\u274C';
+          break;
+        case 'indeciso':
+          emoji = '\u2753';
+          break;
+        case 'nao quis responder':
+          emoji = '\u2755';
+          break;
+      }
+      text += `${emoji} ${tempList[i].nome}<i>(${tempList[i].partido} - ${tempList[i].uf})</i>
     `;
     }
     bot.sendMessage(msg.chat.id, text, opt);
@@ -142,12 +210,12 @@ function update(interval) {
         parsedContent = JSON.parse(body).feed.entry;
         if (deputadosList.length === 0) {
           metrics.aFavor = 0,
-          metrics.contra = 0,
-          metrics.indecisos = 0,
-          metrics.naoQuisResponder = 0;
+            metrics.contra = 0,
+            metrics.indecisos = 0,
+            metrics.naoQuisResponder = 0;
           for (let i in parsedContent) {
             deputadosList.push(new Deputado(parsedContent[i].gsx$nome.$t, parsedContent[i].gsx$partido.$t, parsedContent[i].gsx$uf.$t, parsedContent[i].gsx$impeachment.$t, parsedContent[i].gsx$mudou.$t, parsedContent[i].gsx$foto.$t));
-            switch(parsedContent[i].gsx$impeachment.$t) {
+            switch (parsedContent[i].gsx$impeachment.$t) {
               case 'sim':
                 metrics.aFavor++;
                 break;
@@ -174,6 +242,8 @@ function update(interval) {
             }
           }
         }
+        let uniq = _.uniqBy(deputadosList, 'partido');
+        uniq.map(((deputado) => partidosList.push([deputado.partido])));
       } catch (err) {
         console.log(`[ERROR][JSON PARSER]: ${err.message}`);
       }
