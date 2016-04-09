@@ -72,22 +72,6 @@ avisos.on('mudou', function(data) {
   }
 });
 
-avisos.on('novo', function(data) {
-  console.log("NOVO", data)
-  let opt = {
-    parse_mode: 'html'
-  };
-  let text = `
-  O deputado <a href="${data.foto}">${data.nome}(${data.partido} - ${data.uf})</a> acaba incluir seu voto.
-  Voto: ${capitalizeFirstLetter(data.impeachment)}
-  `;
-  for (let i in chats) {
-    let obj = chats[i][Object.keys(chats[i])[0]];
-    if (obj.notificacao == true)
-      bot.sendMessage(Object.keys(chats[i])[0], text, opt);
-  }
-});
-
 bot.onText(/\/start/, function(msg, match) {
   let opt = {
     parse_mode: 'html'
@@ -174,10 +158,6 @@ function update(interval) {
               if ((deputado.mudou != parsedContent[i].gsx$mudou.$t) && (deputado.impeachment != parsedContent[i].gsx$impeachment.$t)) {
                 deputado.alterar(parsedContent[i].gsx$impeachment.$t, parsedContent[i].gsx$mudou.$t);
               }
-            } else {
-              let novoDeputado = new Deputado(parsedContent[i].gsx$nome.$t, parsedContent[i].gsx$partido.$t, parsedContent[i].gsx$uf.$t, parsedContent[i].gsx$impeachment.$t, parsedContent[i].gsx$mudou.$t, parsedContent[i].gsx$foto.$t);
-              deputadosList.push(novoDeputado);
-              avisos.emit("novo", novoDeputado);
             }
           }
         }
