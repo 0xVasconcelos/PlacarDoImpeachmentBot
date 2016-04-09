@@ -22,10 +22,10 @@ let parsedContent = {};
 let deputadosList = [];
 let chats = [];
 let metrics = {};
-metrics.sim = 0,
-  metrics.nao = 0,
-  metrics.indeciso = 0,
-  metrics['nao quis responder'] = 0;
+    metrics.aFavor = 0,
+    metrics.contra = 0,
+    metrics.indecisos = 0,
+    metrics.naoQuisResponder = 0;
 
 update(500000);
 chatsManager();
@@ -87,10 +87,10 @@ bot.onText(/\/placar/, function(msg, match) {
   };
   let text = `
   <b>Placar do Impeachment</b> <i>v0.0.1</i>
-  ✅ A favor: ${metrics.sim}
-  ❌ Contra: ${metrics.nao}
-  ❓ Indecisos: ${metrics.indeciso}
-  ❕ Não quiseram responder: ${metrics['nao quis responder']}
+  ✅ A favor: ${metrics.aFavor}
+  ❌ Contra: ${metrics.contra}
+  ❓ Indecisos: ${metrics.indecisos}
+  ❕ Não quiseram responder: ${metrics.naoQuisResponder}
 `;
   chatsManager(msg.chat.id);
   bot.sendMessage(msg.chat.id, text, opt);
@@ -141,13 +141,26 @@ function update(interval) {
       try {
         parsedContent = JSON.parse(body).feed.entry;
         if (deputadosList.length === 0) {
-          metrics.sim = 0;
-          metrics.nao = 0;
-          metrics.indeciso = 0;
-          metrics['nao quis responder'] = 0;
+          metrics.aFavor = 0,
+          metrics.contra = 0,
+          metrics.indecisos = 0,
+          metrics.naoQuisResponder = 0;
           for (let i in parsedContent) {
             deputadosList.push(new Deputado(parsedContent[i].gsx$nome.$t, parsedContent[i].gsx$partido.$t, parsedContent[i].gsx$uf.$t, parsedContent[i].gsx$impeachment.$t, parsedContent[i].gsx$mudou.$t, parsedContent[i].gsx$foto.$t));
-            metrics[parsedContent[i].gsx$impeachment.$t]++;
+            switch(parsedContent[i].gsx$impeachment.$t) {
+              case 'sim':
+                metrics.aFavor++;
+                break;
+              case 'nao':
+                metrics.contra++;
+                break;
+              case 'indeciso':
+                metrics.indecisos++;
+                break;
+              case 'nao quis responder':
+                metrics.naoQuisResponder++;
+                break;
+            }
           }
         } else {
           for (let i in parsedContent) {
